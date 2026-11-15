@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pm25-part1-preprocessing"
-version = "0.1.0"
+version = "1.0.0"
 description = "Leakage-aware daily PM2.5 data audit, EDA and fold preparation"
 requires-python = ">=3.11,<3.13"
 # Version ranges below support editable development installs. For a byte-reproducible
