@@ -8,6 +8,8 @@ project:
   embargo_days: 1
   holdout_fraction: 0.2
   holdout_min_days: 30
+  lead_lag_days: 7
+  lead_lag_min_pairs: 30
 
 data:
   raw_file: data/raw/extracted/combined_gee_pm25.csv

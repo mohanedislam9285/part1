@@ -5,6 +5,8 @@ This repository contains the data-preparation stage of a PM2.5 study:
 - read and validate the configured source file;
 - clean the daily PM2.5 target under explicit rules;
 - audit station identity, missingness, distributions and temporal coverage;
+- describe predictor relationships by season and station and screen pollutant lead–lag;
+- measure yearly drift in level and high-concentration frequency;
 - reserve an independent future holdout;
 - write temporal, station-grouped and diagnostic fold definitions;
 - check seven-day sequence availability against the temporal folds.
@@ -76,11 +78,14 @@ python -m pm25_project.cli eda --config src/configs/project.yaml
 # 4. Reserve the future holdout and write fold definitions.
 python -m pm25_project.cli folds --config src/configs/project.yaml
 
-# 5. Check seven-day sequence availability against the temporal folds.
+# 5. Screen PM2.5 lead–lag correlations on the development partition.
+python -m pm25_project.cli lead-lag --config src/configs/project.yaml
+
+# 6. Check seven-day sequence availability against the temporal folds.
 python -m pm25_project.cli sequence-coverage --config src/configs/project.yaml
 ```
 
-`audit` writes `data/processed/cleaned_daily.csv`, `data/processed/audit.json`, and the station identity reconciliation files. `eda` reads the cleaned CSV, so run `audit` first. `sequence-coverage` requires the fold files written by `folds`.
+`audit` writes `data/processed/cleaned_daily.csv`, `data/processed/audit.json`, and the station identity reconciliation files. `eda` reads the cleaned CSV, so run `audit` first. `lead-lag` and `sequence-coverage` require the fold files written by `folds`.
 
 ### Optional scripts
 
@@ -93,6 +98,9 @@ python scripts/generate_part1_report_evidence.py
 
 # Row-level join check; runs only when pm25.csv and gee_features_daily.csv exist.
 python scripts/audit_upstream_join.py
+
+# Station-relative outlier screens; writes the summary under results/ and row-level tables under data/processed/.
+python scripts/audit_cleaning_quality.py
 ```
 
 Each script derives its paths from `src/configs/project.yaml` and stops with an actionable message when a prerequisite is missing.
@@ -100,7 +108,7 @@ Each script derives its paths from `src/configs/project.yaml` and stops with an 
 ### Notebooks
 
 - [`notebooks/01_eda.ipynb`](notebooks/01_eda.ipynb) reproduces the exploratory tables and charts from the cleaned panel.
-- [`notebooks/02_timeseries.ipynb`](notebooks/02_timeseries.ipynb) reports per-station coverage, ACF/PACF, ADF/KPSS/Ljung–Box tests and trend slopes on uninterrupted development segments. Its outputs are saved in the file.
+- [`notebooks/02_timeseries.ipynb`](notebooks/02_timeseries.ipynb) reports per-station coverage, ACF/PACF, ADF/KPSS/Ljung–Box tests, trend slopes and yearly drift on the development partition. Its outputs are saved in the file.
 
 Both notebooks expect `audit` to have run first, and `02_timeseries.ipynb` also expects `folds` to have written `results/future_holdout.json`. Re-execute headless with:
 
@@ -143,6 +151,14 @@ Fold sizes, date boundaries and embargo days are recorded in each JSON file. The
 | [`results/station_summary.csv`](results/station_summary.csv) | Station-level PM2.5 and exceedance summary |
 | [`results/monthly_summary.csv`](results/monthly_summary.csv) | Monthly PM2.5 summary |
 | [`results/seasonal_summary.csv`](results/seasonal_summary.csv) | Seasonal levels and exceedance frequencies |
+| [`results/predictor_relationships_by_season.csv`](results/predictor_relationships_by_season.csv) | PM2.5–predictor Spearman correlations by season |
+| [`results/predictor_relationships_by_station.csv`](results/predictor_relationships_by_station.csv) | PM2.5–predictor Spearman correlations by station |
+| [`results/aod_meteorology_relationships.csv`](results/aod_meteorology_relationships.csv) | Raw and meteorology-adjusted PM2.5–AOD correlations |
+| [`results/aod_by_wind_tertile.csv`](results/aod_by_wind_tertile.csv) | PM2.5–AOD correlation within wind-speed thirds |
+| [`results/yearly_trend.csv`](results/yearly_trend.csv) | Yearly PM2.5 level and high-concentration frequency |
+| [`results/yearly_trend_development.csv`](results/yearly_trend_development.csv) | The same yearly summary on the development partition |
+| [`results/lead_lag_pm25.csv`](results/lead_lag_pm25.csv) | Station-level PM2.5 lead–lag correlations |
+| [`results/lead_lag_summary.csv`](results/lead_lag_summary.csv) | Median lead–lag correlation by variable and lag |
 | [`results/cleaning_quality_audit/cleaning_quality_audit.json`](results/cleaning_quality_audit/cleaning_quality_audit.json) | Cleaning-quality summary; row-level flag tables stay local |
 | [`results/provenance_audit/`](results/provenance_audit/) | Upstream join summary |
 | [`results/pollutant_missingness_station_month_development.csv`](results/pollutant_missingness_station_month_development.csv) | NO2/CO/O3 missingness by station-month |
@@ -150,6 +166,8 @@ Fold sizes, date boundaries and embargo days are recorded in each JSON file. The
 | [`figures/`](figures/) | Distribution, seasonal, missingness, coverage and summary charts |
 
 The fold definitions in `folds/` and the reservation record `results/future_holdout.json` are committed with the repository. `results/lookback_coverage.csv` is generated when `sequence-coverage` runs.
+
+The specification asks for per-group folders (`results/BXX-YY/`) consolidated into `results/consolidated/`. This project has no group identifier configured, so every artifact is written directly to `results/`. The flat layout is flagged for instructor confirmation.
 
 ## Reports and presentation
 
@@ -172,7 +190,7 @@ Typst is not a Python dependency.
 python -m pytest -c src/pyproject.toml src/tests -q
 ```
 
-The suite covers cleaning rules, data contracts, EDA artifacts, sequence boundaries, fold construction, leakage checks and temporal features.
+The suite covers cleaning rules, data contracts, EDA artifacts, lead–lag screens, predictor relationships, sequence boundaries, fold construction, leakage checks and temporal features. The recorded run contains 35 tests in 9 files.
 
 ## Repository layout
 
@@ -199,7 +217,9 @@ The suite covers cleaning rules, data contracts, EDA artifacts, sequence boundar
 │   │   ├── data_audit.py              source read, canonicalisation and cleaning
 │   │   ├── eda.py                     exploratory tables and figures
 │   │   ├── features.py                past-only lags, rolling means and calendar terms
+│   │   ├── lead_lag.py                station-level lead–lag correlations
 │   │   ├── preprocessing.py           fold-local sequence imputation and scaling
+│   │   ├── relationships.py           seasonal, station and yearly summaries
 │   │   ├── sequence_audit.py          lookback coverage against the folds
 │   │   ├── sequences.py               station-contained daily windows
 │   │   ├── splits.py                  holdout and fold definitions
@@ -208,6 +228,7 @@ The suite covers cleaning rules, data contracts, EDA artifacts, sequence boundar
 │   └── tests/                         automated checks
 ├── scripts/
 │   ├── run_eda.py                     audit + EDA + summary figures
+│   ├── audit_cleaning_quality.py      station-relative outlier screens
 │   ├── audit_upstream_join.py         upstream join reconstruction
 │   └── generate_part1_report_evidence.py
 ├── folds/                             committed temporal, spatial and diagnostic fold JSONs

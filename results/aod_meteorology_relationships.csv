@@ -1,0 +1,6 @@
+scope,n_pairs,raw_spearman,partial_spearman,controls
+pooled,40983,0.18012397226180224,0.12263769249417512,"temperature_celsius, pressure_mb, wind_u, wind_v"
+DJF,8938,0.24956592004612663,0.14278766668046408,"temperature_celsius, pressure_mb, wind_u, wind_v"
+JJA,12766,0.20927055122438423,0.16859181826671643,"temperature_celsius, pressure_mb, wind_u, wind_v"
+MAM,9276,0.16192929477915025,0.1177979588729917,"temperature_celsius, pressure_mb, wind_u, wind_v"
+SON,10003,0.21422869793989865,0.1418005211717481,"temperature_celsius, pressure_mb, wind_u, wind_v"

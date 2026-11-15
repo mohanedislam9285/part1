@@ -289,8 +289,11 @@ cannot establish an instrument fault.
 Plausible extremes are retained. A high concentration is not automatically a measurement
 error, and deleting unusual values would bias the target toward ordinary days and remove the episodes
 the analysis must retain. The station-relative Tukey screen identified 352 potentially unusual
-values across 71 stations. These observations were retained and flagged for review rather than
-automatically removed.
+values at 60 of the 71 development stations screened. These observations were retained and flagged
+for review rather than automatically removed. A within-station $|z| > 3$ screen flags 396 records
+at 68 development stations; it is reported for comparison and also triggers no deletion. Both
+screens are produced by `scripts/audit_cleaning_quality.py`, which writes row-level flags outside
+the versioned results directory.
 
 #grid(
   columns: (1fr, 1fr, 1fr, 1fr),
@@ -311,7 +314,8 @@ automatically removed.
   [Out-of-rule / non-finite targets], [0], [After cleaning, every retained target is inside the physical rule.],
   [Coordinate validity], [0 invalid], [All 95 stations carry finite latitude and longitude.],
   [Station identity reconciliation], [98 → 95], [Three station identities (nine zero-target rows) removed by the target rule; the identity logic is preserved.],
-  [Station-relative Tukey screen], [352 flagged], [Q3 + 3×IQR flags on 71 stations; flags are *retained for review*, never auto-deleted.],
+  [Station-relative Tukey screen], [352 flagged], [Q3 + 3×IQR flags at 60 of 71 development stations; flags are *retained for review*, never auto-deleted.],
+  [Within-station z-score screen], [396 flagged], [|z| > 3 at 68 development stations; diagnostic only, no deletion.],
   [Development high-value counts], [90 / 36 / 11], [Values > 50 / > 100 / > 250 µg/m³ kept in the development partition.],
 )
 ]
@@ -424,6 +428,43 @@ tail of pollution episodes.
   ],
 )
 
+#heading(level: 2)[Yearly drift and high-concentration frequency]
+#block[
+Annual levels do not follow a single direction. The yearly mean moves from 10.89 µg/m³ in 2016 to
+7.55 µg/m³ in 2020, then rises to 10.22 µg/m³ in 2023 and stays near 9.9 µg/m³ in 2025–2026.
+The share above 25 µg/m³ follows a similar non-monotone path, from 1.80% in 2016 to 4.29% in 2019,
+2.02% in 2022 and 7.30% in 2026.
+]
+
+#keep[
+#tbl(
+  (0.7fr, 0.9fr, 0.85fr, 0.85fr, 0.85fr, 0.85fr, 0.85fr, 0.9fr),
+  table.header(th("Year"), th("Records"), th("Stations"), th("Mean"), th("Median"), th("P95"), th(">25"), th(">50")),
+  [2016], [111], [13], [10.89], [10.17], [21.52], [1.80%], [0.00%],
+  [2017], [2,116], [17], [9.46], [7.67], [23.19], [3.83%], [0.33%],
+  [2018], [252], [18], [7.88], [7.02], [17.04], [0.40%], [0.00%],
+  [2019], [1,772], [18], [8.65], [6.72], [23.88], [4.29%], [0.06%],
+  [2020], [3,247], [22], [7.55], [5.71], [20.02], [2.06%], [0.09%],
+  [2021], [4,746], [36], [8.85], [6.80], [19.92], [2.38%], [0.59%],
+  [2022], [4,954], [39], [9.62], [8.13], [19.94], [2.02%], [0.46%],
+  [2023], [5,400], [41], [10.22], [9.00], [21.00], [2.44%], [0.20%],
+  [2024], [8,688], [55], [9.61], [8.00], [21.66], [3.15%], [0.21%],
+  [2025], [8,149], [57], [9.92], [8.52], [22.33], [3.24%], [0.10%],
+  [2026], [1,548], [46], [9.90], [6.77], [29.75], [7.30%], [1.16%],
+)
+]
+#v(3pt)
+#caption([Levels in µg/m³; >25 and >50 are record shares. 2026 covers 1 January to 6 April; 2016 and 2018 contain fewer than 300 records. Full table: `results/yearly_trend.csv`.])
+#v(4pt)
+The panel is unbalanced: the number of reporting stations grows from 13 in 2016 to 57 in 2025, so
+year-to-year differences mix changes in concentration with changes in station composition. The
+yearly series is therefore descriptive and is not used to estimate a trend or an annual rate of
+change. The 2026 share is based on one partial year, and the sparse 2016 and 2018 rows cannot
+support a comparison with later years.
+
+#align(center)[#image("../../../figures/pm25_yearly_trend.png", width: 92%)]
+#caption([Figure 4. Yearly PM2.5 level (left) and high-concentration frequency (right), cleaned panel. Empty or partial years remain visible so the changing station count is not hidden.])
+
 #heading(level: 2)[Where the stations are]
 #grid(
   columns: (0.85fr, 1.15fr),
@@ -431,7 +472,7 @@ tail of pollution episodes.
   [#image("../../../figures/station_map.png", width: 100%)],
   [#image("../../../figures/station_coverage_development.png", width: 100%)],
 )
-#caption([Figure 4 (left). Locations of the 95 coordinate-defined stations in the cleaned panel. Figure 5 (right). Development coverage per station, with the longest consecutive daily observation period highlighted.])
+#caption([Figure 5 (left). Locations of the 95 coordinate-defined stations in the cleaned panel. Figure 6 (right). Development coverage per station, with the longest consecutive daily observation period highlighted.])
 
 #heading(level: 2)[Sparse and irregular temporal coverage]
 #block[
@@ -444,7 +485,7 @@ diagnostics are therefore restricted to uninterrupted daily segments.
   table.header(th("Property"), th("Value"), th("Consequence")),
   [ACF/PACF availability], [63 stations], [≥ 14 consecutive development days.],
   [Formal ADF / KPSS / Ljung-Box], [6 stations], [Only ≥ 30-day runs are testable.],
-  [Lead–lag pollutant analysis], [2–6 stations per lag], [Descriptive.],
+  [Lead–lag pollutant analysis], [2–6 stations per lag], [Estimable only at lags −2 to +2 days; descriptive.],
 )
 ]
 #v(4pt)
@@ -454,6 +495,36 @@ Across the development partition, the median longest uninterrupted run is *17 da
 is *32 days*; 63 stations reach at least 14 consecutive days and only 6 reach 30. Applying conventional
 time-series diagnostics to irregularly spaced observations would make the lag interpretation unreliable.
 Where ACF or PACF lags are reported, lag k means k daily steps — lag 24 is 24 days, not 24 hours.
+
+#heading(level: 2)[Lead–lag screen]
+#block[
+The screen correlates PM2.5 at day $t$ with each environmental variable at $t - k$ for
+$k = -7, ..., +7$. A positive lag therefore means the variable leads PM2.5; a negative lag means it
+lags. Pairs are formed only inside an uninterrupted daily segment of the same station, and a lag is
+reported only when at least 30 aligned pairs are available. Under that rule the estimable range is
+−2 to +2 days, with 2–6 stations per lag: two at ±2 days, four at ±1 day and six at lag 0. Lags
+beyond ±2 days have no station with enough consecutive days.
+]
+
+#keep[
+#tbl(
+  (0.9fr, 0.9fr, 0.8fr, 0.8fr, 0.9fr, 0.8fr, 0.8fr, 0.8fr),
+  table.header(th("Lag (days)"), th("Stations"), th("AOD"), th("O₃"), th("Temp."), th("Wind sp."), th("NO₂"), th("CO")),
+  [−2], [2], [0.008], [−0.255], [−0.011], [−0.107], [0.074], [−0.086],
+  [−1], [4], [0.022], [−0.368], [0.246], [−0.037], [−0.042], [0.206],
+  [0], [6], [0.085], [−0.559], [0.361], [−0.115], [−0.026], [0.046],
+  [+1], [4], [0.057], [−0.585], [0.341], [0.059], [−0.072], [0.078],
+  [+2], [2], [0.087], [−0.325], [0.058], [−0.043], [−0.100], [−0.022],
+)
+#v(3pt)
+#caption([Median station-level Pearson correlation at each lag, development partition. Full station-level results: `results/lead_lag_pm25.csv`; lag summary: `results/lead_lag_summary.csv`; code: `src/pm25_project/lead_lag.py` and the `lead-lag` CLI command.])
+]
+#v(4pt)
+The strongest signals are same-day and one-day: O₃ is negatively correlated at every estimable lag
+(median $r = -0.559$ at lag 0 and $-0.585$ at +1 day), temperature is positive ($0.361$ and $0.341$),
+and AOD is weakly positive ($0.085$ at lag 0). NO₂ and CO do not show a consistent sign. With 2–6
+stations per lag these are descriptive summaries of a small, irregular subset, not evidence that any
+variable is available at the origin or should enter the model.
 
 #v(2pt)
 
@@ -491,10 +562,106 @@ correlations do not establish that a variable is usable at the origin.
   [#image("../../../figures/spearman_correlations.png", width: 100%)],
   [#image("../../../figures/missingness.png", width: 100%)],
 )
-#caption([Figure 6 (left). Spearman rank-correlation structure. Figure 7 (right). Missingness profile of the cleaned table.])
+#caption([Figure 7 (left). Spearman rank-correlation structure. Figure 8 (right). Missingness profile of the cleaned table.])
+
+#heading(level: 2)[Associations by season]
+#block[
+The pooled correlations hide seasonal differences. NO₂ is strongest in winter ($rho = 0.353$) and
+weakest in summer ($0.197$); wind speed is negative in every season and most negative in winter
+($-0.357$); temperature changes from essentially zero in winter ($-0.041$) to $0.244$ in summer; and
+O₃ is negative throughout ($-0.129$ to $-0.181$). AOD is positive in every season, between $0.162$
+and $0.250$. These are separate descriptive splits of the same records, not independent tests.
+]
+
+#keep[
+#tbl(
+  (1.35fr, 0.8fr, 0.8fr, 0.8fr, 0.8fr),
+  table.header(th("Variable"), th("DJF"), th("MAM"), th("JJA"), th("SON")),
+  [no2], [0.353], [0.249], [0.197], [0.209],
+  [aod], [0.250], [0.162], [0.209], [0.214],
+  [pressure_mb], [0.254], [0.176], [0.104], [0.146],
+  [wind_speed], [−0.357], [−0.120], [0.031], [−0.091],
+  [wind_u], [−0.334], [−0.214], [−0.061], [−0.177],
+  [o3], [−0.129], [−0.158], [−0.166], [−0.181],
+  [co], [0.016], [0.008], [0.187], [−0.032],
+  [temperature_celsius], [−0.041], [0.092], [0.244], [0.079],
+)
+]
+#v(3pt)
+#caption([Spearman ρ between PM2.5 and each variable within season, cleaned panel. Each season has 8,938–12,766 records; the gas correlations use about 1,200 fewer pairs because of missing values. Full table: `results/predictor_relationships_by_season.csv`.])
+#v(4pt)
+
+#heading(level: 2)[Associations by station]
+#block[
+The station-level screen repeats the correlation separately for each station and keeps stations with
+at least 30 complete pairs. All nine variables are estimable at 91 of the 95 stations. NO₂ and AOD are
+positive at almost every station (98% and 96%), while wind speed and O₃ are negative at almost every
+station (1% and 5% positive). The median station-level AOD correlation ($0.224$) is larger than the
+pooled value ($0.180$), so pooling mixes within-station and between-station variation.
+]
+
+#keep[
+#tbl(
+  (1.4fr, 0.8fr, 0.85fr, 1.25fr, 0.9fr),
+  table.header(th("Variable"), th("Stations"), th("Median ρ"), th("Interquartile range"), th("ρ > 0")),
+  [no2], [91], [0.281], [0.179 to 0.372], [98%],
+  [aod], [91], [0.224], [0.128 to 0.367], [96%],
+  [pressure_mb], [91], [0.185], [0.046 to 0.341], [81%],
+  [wind_v], [91], [0.113], [0.033 to 0.288], [81%],
+  [temperature_celsius], [91], [0.133], [−0.078 to 0.268], [63%],
+  [co], [91], [0.037], [−0.046 to 0.099], [65%],
+  [o3], [91], [−0.170], [−0.259 to −0.106], [5%],
+  [wind_u], [91], [−0.255], [−0.435 to −0.099], [7%],
+  [wind_speed], [91], [−0.270], [−0.361 to −0.184], [1%],
+)
+]
+#v(3pt)
+#caption([Distribution across stations of the within-station Spearman correlation with PM2.5, cleaned panel. Full table: `results/predictor_relationships_by_station.csv`.])
+#v(4pt)
+
+#heading(level: 2)[AOD and meteorology]
+#block[
+AOD is the only aerosol-optical variable in the bundle, so its relationship with PM2.5 matters even though
+it is excluded from the input contract. The raw pooled correlation is $0.180$. After ranking and
+removing the linear component explained by temperature, pressure and the two wind components, the
+partial correlation falls to $0.123$; within seasons it lies between $0.118$ and $0.169$. Meteorology
+therefore accounts for part, but not all, of the raw association. The association is also stronger in
+the highest wind-speed third ($0.295$) than in the low and middle thirds ($0.116$ and $0.102$). These
+are descriptive controls, not a causal decomposition, and they do not make AOD available at the origin.
+]
+
+#grid(
+  columns: (1fr, 1fr),
+  gutter: 12pt,
+  [
+    #tbl(
+      (0.9fr, 0.8fr, 0.8fr, 0.9fr),
+      table.header(th("Scope"), th("Pairs"), th("Raw ρ"), th("Adjusted ρ")),
+      [Pooled], [40,983], [0.180], [0.123],
+      [DJF], [8,938], [0.250], [0.143],
+      [MAM], [9,276], [0.162], [0.118],
+      [JJA], [12,766], [0.209], [0.169],
+      [SON], [10,003], [0.214], [0.142],
+    )
+    #v(3pt)
+    #caption([PM2.5–AOD Spearman, raw and partial (controls: temperature, pressure, wind_u, wind_v). `results/aod_meteorology_relationships.csv`.])
+  ],
+  [
+    #tbl(
+      (0.9fr, 0.8fr, 1.0fr, 0.8fr),
+      table.header(th("Wind third"), th("Pairs"), th("Mean m/s"), th("ρ")),
+      [Low], [13,663], [0.74], [0.116],
+      [Middle], [13,663], [1.73], [0.102],
+      [High], [13,657], [4.42], [0.295],
+    )
+    #v(3pt)
+    #caption([PM2.5–AOD Spearman within wind-speed thirds. `results/aod_by_wind_tertile.csv`.])
+  ],
+)
+#v(4pt)
 
 #align(center)[#image("../../../figures/pollutant_missingness_heatmap_development.png", width: 100%)]
-#caption([Figure 8. Percentage of station-days missing by station and month for NO₂, CO and O₃ in the development partition (73 stations, 2016-11 to 2024-12). Gray cells have no station-month record; darker red means a larger share of missing values. Full table: `results/pollutant_missingness_station_month_development.csv`.])
+#caption([Figure 9. Percentage of station-days missing by station and month for NO₂, CO and O₃ in the development partition (73 stations, 2016-11 to 2024-12). Gray cells have no station-month record; darker red means a larger share of missing values. Full table: `results/pollutant_missingness_station_month_development.csv`.])
 #v(4pt)
 Missingness is concentrated rather than uniform. For each gas, 19 of the 73 development stations have
 at least one affected station-month; 258 of 2,179 NO₂ station-months, 258 of 2,179 CO station-months,
@@ -515,7 +682,8 @@ and 261 of 2,179 O₃ station-months contain at least one missing day.
 #callout(
   "Missingness is not imputed globally",
   [There is no dataset-wide fill. Any imputation is fitted inside the training fold, so the fill value
-   cannot be computed from validation or test data.],
+   cannot be computed from validation or test data. NO₂, CO and O₃ receive no imputation rule at all:
+   they are audited but not model inputs, so their missing values never enter the prepared sequences.],
 )
 
 #v(2pt)
@@ -586,6 +754,10 @@ raw target is never imputed.
 For station $s$ and origin day $t$, one sequence example is a *seven-day* window of daily
 rows for that station, ending at $t$, paired with the single target value at $t+1$.
 
+First differences and rates of change are not used. Both need two consecutive observed days, so they
+would be undefined at every gap and would shorten the usable series further; the seven-day window
+carries the recent level without crossing a gap.
+
 #grid(
   columns: (1fr, auto, 1.15fr, auto, 1fr),
   gutter: 3pt,
@@ -630,7 +802,7 @@ rows for that station, ending at $t$, paired with the single target value at $t+
 )
 ]
 #v(4pt)
-#caption([The prepared input contains nine columns: seven engineered features and two rolling-feature missingness flags. This column set is fixed here as the input contract.])
+#caption([The prepared input contains nine columns: seven engineered features and two rolling-feature missingness flags. This column set is fixed here as the input contract. All environmental variables — temperature, pressure, wind components, NO₂, CO, O₃ and AOD — are excluded from that contract; every input is target-derived or a calendar term.])
 
 #heading(level: 2)[Leakage prevention rules]
 #ticks(
@@ -659,6 +831,13 @@ rows for that station, ending at $t$, paired with the single target value at $t+
 )
 #v(8pt)
 
+#heading(level: 2)[Station retention before splitting]
+A station enters the development folds if it has at least one cleaned target row before the cutoff;
+no station is dropped for low coverage. All 73 development stations are therefore retained for EDA
+and fold assignment, including stations whose observations are too sparse to form an eight-day
+sequence. Those stations contribute no prepared windows, so they affect descriptive counts but not
+the sequence inputs.
+
 #heading(level: 2)[Leakage-control checklist]
 #keep[
 #tbl(
@@ -666,6 +845,7 @@ rows for that station, ending at $t$, paired with the single target value at $t+
   table.header(th("Control"), th("Status"), th("Automated check")),
   [Fold-local imputation and scaling], [Pass], [Automated fold-local preprocessing tests confirm that statistics are fitted on the training fold only.],
   [Past-only rolling features], [Pass], [Future-value mutation tests confirm that earlier lag and rolling features remain unchanged.],
+  [Target-derived inputs], [Pass], [The source header contains no PM10 or AQI column, and every prepared input is a function of PM2.5 at or before the origin.],
   [Origin/target alignment], [Pass], [Sequence alignment tests confirm that each window ends at the origin day and the label is the following day.],
   [Gap and station boundaries], [Pass], [Automated tests verify station isolation, consecutive-date requirements and correct input/target alignment.],
   [Environmental timing], [Blocked], [Exogenous columns are withheld rather than assumed to be available at the origin.],
@@ -676,7 +856,7 @@ rows for that station, ending at $t$, paired with the single target value at $t+
 #callout(
   "Executed test evidence",
   [The suite is stored in `src/tests` and is run from the project root with
-   `python -m pytest -c src/pyproject.toml src/tests -q`. It contains *28 tests in 7 files*.
+   `python -m pytest -c src/pyproject.toml src/tests -q`. It contains *35 tests in 9 files*.
    No test log is shipped with the repository; rerun the command to reproduce the result.],
   accent: green,
   tint: ice,
@@ -694,7 +874,7 @@ rows for that station, ending at $t$, paired with the single target value at $t+
   table.header(th("Area"), th("Limitation")),
   [Licence], [Compiled-bundle redistribution rights unresolved; no unrestricted-redistribution claim is made.],
   [Upstream ETL], [All 41,718 bundled rows map to source PM/GEE rows, but the publisher's omitted-row rule and tie handling remain unreconstructed.],
-  [Coverage], [Sparse, irregular station-days limit formal temporal tests to six stations and make lead–lag analysis descriptive.],
+  [Coverage], [Sparse, irregular station-days limit formal temporal tests to six stations and the lead–lag screen to lags −2 to +2 days at 2–6 stations per lag.],
   [Environmental inputs], [Meteorology, NO₂, CO, O₃ and AOD are withheld because availability at the origin is undocumented.],
   [Tail behaviour], [Only a handful of development observations exceed 100 µg/m³, so the high-concentration tail is represented by very few records.],
 )
@@ -752,7 +932,7 @@ Distributional analysis was performed for all environmental variables using hist
 )
 ]
 #v(3pt)
-#caption([Development partition (73 stations, 2016-11 to 2024-12). The full station-month table is `results/pollutant_missingness_station_month_development.csv`; Figure 8 visualises it.])
+#caption([Development partition (73 stations, 2016-11 to 2024-12). The full station-month table is `results/pollutant_missingness_station_month_development.csv`; Figure 9 visualises it.])
 #v(5pt)
 The station-month table shows that missingness is concentrated in a subset of stations and months
 rather than being uniformly distributed across the dataset. The gases are retained for audit but
@@ -803,6 +983,16 @@ kept outside the input contract.
 #v(4pt)
 #caption([Configuration from `src/configs/project.yaml`; source columns from the cleaning audit. Column names follow the CSV; chemical symbols are used in prose.])
 
+#v(3pt)
+#callout(
+  "Repository layout",
+  [The specification stores each group's results in `results/BXX-YY/` and consolidates them in
+   `results/consolidated/`. This project has no group identifier, so artifacts are written directly
+   to `results/`. The flat layout is flagged for instructor confirmation.],
+  accent: amber,
+  tint: sand,
+)
+
 #v(2pt)
 
 = Appendix D — Executed evidence
@@ -810,7 +1000,7 @@ kept outside the input contract.
 #tbl(
   (1.45fr, 2.85fr, 1.35fr),
   table.header(th("Evidence"), th("Command / artifact"), th("Result")),
-  [Full test suite], [#codeid("python -m pytest -c src/pyproject.toml src/tests -q")], [28 passed in 7 files],
+  [Full test suite], [#codeid("python -m pytest -c src/pyproject.toml src/tests -q")], [35 passed in 9 files],
   [Fold definitions], [#codeid("folds/folds_temporal.json")], [5 / 5 / diagnostic, committed],
   [Reserved holdout], [#codeid("results/future_holdout.json")], [reserved; excluded from every fold],
   [Time-series notebook], [#codeid("notebooks/02_timeseries.ipynb")], [executed; outputs saved],
@@ -818,6 +1008,12 @@ kept outside the input contract.
   [Provenance audit], [#codeid("scripts/audit_upstream_join.py")], [41,718 matched, recomputed],
   [EDA statistics], [#codeid("results/Exploratory_Data.csv")], [19 variables, saved output],
   [Correlation table], [#codeid("results/correlations.csv")], [36 pairwise rows, saved output],
+  [Lead–lag screen], [#codeid("python -m pm25_project.cli lead-lag")], [40 variable–lag rows; 2–6 stations per lag],
+  [Seasonal relationships], [#codeid("results/predictor_relationships_by_season.csv")], [36 variable–season rows],
+  [Station relationships], [#codeid("results/predictor_relationships_by_station.csv")], [819 station–variable rows],
+  [AOD and meteorology], [#codeid("results/aod_meteorology_relationships.csv")], [raw vs partial ρ, saved output],
+  [Yearly drift], [#codeid("results/yearly_trend.csv")], [11 years, saved output],
+  [Cleaning-quality screen], [#codeid("scripts/audit_cleaning_quality.py")], [352 flags at 60 of 71 stations],
   [Part 1 evidence], [#codeid("scripts/generate_part1_report_evidence.py")], [boxplot, coverage, heatmap],
   [Evidence summary], [#codeid("results/part1_evidence_summary.json")], [saved output],
 )

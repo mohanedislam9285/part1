@@ -6,11 +6,13 @@ Commands:
     eda                Write exploratory tables and figures from the cleaned panel.
     folds              Reserve the future holdout and write temporal/spatial folds.
     sequence-coverage  Measure seven-day sequence availability against the folds.
+    lead-lag           Correlate PM2.5 with environmental variables across day lags.
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -19,6 +21,7 @@ import pandas as pd
 from .config import load_config, validate_config
 from .data_audit import run_audit
 from .eda import promote_figures, run_eda
+from .lead_lag import lead_lag_table
 from .sequence_audit import sequence_coverage_table
 from .splits import save_folds
 
@@ -97,6 +100,31 @@ def cmd_sequence_coverage(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_lead_lag(args: argparse.Namespace) -> int:
+    cfg, root = _load(args)
+    frame = _read_clean(cfg, root)
+    results = _results_dir(cfg, root)
+    holdout_path = results / "future_holdout.json"
+    if not holdout_path.is_file():
+        raise FileNotFoundError(
+            f"Holdout definition not found: {holdout_path}. Run `python -m pm25_project.cli folds` first."
+        )
+    holdout = json.loads(holdout_path.read_text(encoding="utf-8"))
+    development = frame.iloc[holdout["development_indices"]].reset_index(drop=True)
+    max_lag = int(cfg["project"].get("lead_lag_days", 7))
+    min_pairs = int(cfg["project"].get("lead_lag_min_pairs", 30))
+    detail, summary = lead_lag_table(development, max_lag=max_lag, min_pairs=min_pairs)
+    results.mkdir(parents=True, exist_ok=True)
+    detail.to_csv(results / "lead_lag_pm25.csv", index=False)
+    summary.to_csv(results / "lead_lag_summary.csv", index=False)
+    estimable = summary[summary["n_stations"] > 0]
+    print(f"Development rows: {len(development):,}")
+    print(f"Estimable lags (>= {min_pairs} aligned pairs): {estimable['lag_days'].min()} to {estimable['lag_days'].max()}")
+    print(f"Stations per estimable lag: {estimable['n_stations'].min()} to {estimable['n_stations'].max()}")
+    print(f"Wrote {results / 'lead_lag_pm25.csv'} and {results / 'lead_lag_summary.csv'}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="python -m pm25_project.cli",
@@ -109,6 +137,7 @@ def build_parser() -> argparse.ArgumentParser:
         "eda": (cmd_eda, "Write exploratory tables and figures from the cleaned panel."),
         "folds": (cmd_folds, "Reserve the future holdout and write fold definitions."),
         "sequence-coverage": (cmd_sequence_coverage, "Check seven-day coverage against the folds."),
+        "lead-lag": (cmd_lead_lag, "Correlate PM2.5 with environmental variables across day lags."),
     }
     for name, (function, help_text) in commands.items():
         subparser = subparsers.add_parser(name, help=help_text)

@@ -5,6 +5,7 @@ import shutil
 import numpy as np
 import pandas as pd
 from .schemas import EXPLORATORY_DATA
+from .relationships import run_relationships
 from .temporal_diagnostics import temporal_table
 
 
@@ -93,3 +94,4 @@ def run_eda(df: pd.DataFrame, cfg: dict, audit: dict | None = None) -> None:
     if has_coordinates and station_map[["latitude","longitude"]].notna().all().all():
         fig,ax=plt.subplots(figsize=(8,5)); points=ax.scatter(station_map.longitude,station_map.latitude,s=30,c=station_map.pm25_mean,cmap="viridis"); ax.set(xlabel="Longitude",ylabel="Latitude",title="Monitoring stations (colour = mean PM2.5)"); fig.colorbar(points,ax=ax,label="Mean PM2.5 (µg/m³)"); fig.tight_layout(); fig.savefig(figdir/"station_map.png",dpi=160); plt.close(fig)
     temporal_table(df).to_csv(out/"Exploratory_temporal.csv",index=False,encoding="utf-8")
+    run_relationships(df,cfg,out,figdir)
