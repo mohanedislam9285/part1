@@ -15,11 +15,19 @@ def temporal_table(df: pd.DataFrame) -> pd.DataFrame:
         if regular and len(y)>2: row["acf_lag1"]=float(pd.Series(y).autocorr(1))
         if regular and len(y)>7: row["acf_lag7"]=float(pd.Series(y).autocorr(7))
         if not regular: row["notes"]="Irregular intervals: interval-sensitive ACF/stationarity tests omitted; lag unit would be ambiguous."
-        if regular and len(y)>30:
+        if regular and len(y)>=14:
+            try:
+                from statsmodels.tsa.stattools import pacf
+                row["pacf_lag1"]=float(pacf(y,nlags=1,method="ywm")[1])
+            except ImportError:
+                row["notes"]="Install analysis extras for PACF/ADF/KPSS/Ljung-Box; ACF/trend computed from daily values."
+            except (ValueError,ZeroDivisionError):
+                row["notes"]="PACF was undefined for this series."
+        if regular and len(y)>=30:
             try:
                 from statsmodels.stats.diagnostic import acorr_ljungbox
                 row["ljung_box_p"]=float(acorr_ljungbox(y,lags=[7],return_df=True)["lb_pvalue"].iloc[0])
-                from statsmodels.tsa.stattools import adfuller,kpss,pacf
+                from statsmodels.tsa.stattools import adfuller,kpss
                 from statsmodels.tools.sm_exceptions import InterpolationWarning
                 row["adf_p"]=float(adfuller(y,autolag="AIC",result_object=True).pvalue)
                 with warnings.catch_warnings(record=True) as diagnostic_warnings:
@@ -27,9 +35,8 @@ def temporal_table(df: pd.DataFrame) -> pd.DataFrame:
                     row["kpss_p"]=float(kpss(y,regression="c",nlags="auto",result_object=True).pvalue)
                 if any(issubclass(item.category,InterpolationWarning) for item in diagnostic_warnings):
                     row["notes"]+=" KPSS p-value is at least 0.1; the upper lookup-table bound was reached."
-                row["pacf_lag1"]=float(pacf(y,nlags=1,method="ywm")[1])
             except ImportError:
-                row["notes"]="Install analysis extras for ADF/KPSS/Ljung-Box/PACF; ACF/trend computed from daily values."
+                row["notes"]="Install analysis extras for ADF/KPSS/Ljung-Box; ACF/trend computed from daily values."
             except (ValueError,ZeroDivisionError):
                 row["notes"]="Some stationarity diagnostics were undefined for this series."
         if len(ts)>1:

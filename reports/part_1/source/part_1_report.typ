@@ -428,7 +428,7 @@ particularly the treatment of rare high-concentration events.
       [Dec], [11.15], [8.91], [7.05%],
     )
     #v(3pt)
-    #caption([Higher PM2.5 levels are observed during winter months, particularly November to February; full table in `eda/monthly_trend.csv`.])
+    #caption([Higher PM2.5 levels are observed during winter months, particularly November to February; full table in `monthly_trend.csv`.])
   ],
 )
 
@@ -731,7 +731,7 @@ rows for that station, ending at $t$, paired with the single target value at $t+
 The cleaned dataset, the defined temporal and station-grouped folds, and the reserved holdout
 are the deliverables of this part, subject to the limitations listed above.
 #v(4pt)
-#caption([The fold definitions and the reserved holdout are generated locally by the `folds` command. They are not shipped with the repository. Appendix D lists the commands that recreate each artifact.])
+#caption([The fold definitions in `folds/` and the reservation record `results/future_holdout.json` are shipped with the repository. Appendix D lists the commands that recreate each artifact.])
 
 #v(2pt)
 
@@ -829,9 +829,9 @@ kept outside the input contract.
   (1.45fr, 2.85fr, 1.35fr),
   table.header(th("Evidence"), th("Command / artifact"), th("Result")),
   [Full test suite], [#codeid("python -m pytest -c src/pyproject.toml src/tests -q")], [28 passed in 7 files],
-  [Fold definitions], [#codeid("python -m pm25_project.cli folds")], [5 / 5 / diagnostic, generated locally],
+  [Fold definitions], [#codeid("folds/folds_temporal.json")], [5 / 5 / diagnostic, committed],
   [Reserved holdout], [#codeid("results/future_holdout.json")], [reserved; excluded from every fold],
-  [Cleaning screen], [#codeid("scripts/audit_cleaning_quality.py")], [flags retained, no deletion],
+  [Time-series notebook], [#codeid("notebooks/02_timeseries.ipynb")], [executed; outputs saved],
   [Processed audit], [#codeid("data/processed/audit.json")], [41,718 → 40,983, generated locally],
   [Provenance audit], [#codeid("scripts/audit_upstream_join.py")], [41,718 matched, recomputed],
   [EDA statistics], [#codeid("results/Exploratory_Data.csv")], [19 variables, saved output],
@@ -840,4 +840,4 @@ kept outside the input contract.
   [Evidence summary], [#codeid("results/part1_evidence_summary.json")], [saved output],
 )
 #v(4pt)
-#caption([Commands that write into `data/processed/`, `folds/` or `results/` must be rerun to reproduce the saved tables. The test suite is the reproducibility check for the implemented code; no test log is shipped. The evidence script reads saved data and artifacts and regenerates the Part 1 figures and summary.])
+#caption([The fold and holdout JSON files are committed. Commands that write into `data/processed/` or `results/` can be rerun from the source file to reproduce the saved tables. The test suite is the reproducibility check for the implemented code; no test log is shipped. The evidence script reads saved data and artifacts and regenerates the Part 1 figures and summary.])

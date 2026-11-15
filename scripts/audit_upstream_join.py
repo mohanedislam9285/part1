@@ -23,6 +23,7 @@ cfg, project_root = load_config(CONFIG)
 BUNDLE = resolve_path(cfg, cfg["data"]["raw_file"])
 RAW = BUNDLE.parent
 OUT = project_root / cfg["paths"]["results_root"] / cfg["project"].get("group_id", "") / "provenance_audit"
+ROW_LEVEL = project_root / "data" / "processed" / "provenance_row_level"
 
 required = {"pm25.csv": RAW / "pm25.csv", "gee_features_daily.csv": RAW / "gee_features_daily.csv", "combined bundle": BUNDLE}
 missing = [f"{label}: {path}" for label, path in required.items() if not path.is_file()]
@@ -99,9 +100,10 @@ nearest["match_disposition"] = np.select(
     ["present_in_combined_bundle", "no_same_day_GEE_row", "nearest_GEE_outside_approx_0.25deg"],
     default="within_threshold_but_absent_from_combined_bundle",
 )
-nearest.to_csv(OUT / "pm25_source_to_nearest_daily_gee.csv", index=False, encoding="utf-8")
-bundle_pm.to_csv(OUT / "combined_to_PM25_exact_station_date_coordinate.csv", index=False, encoding="utf-8")
-bundle_gee.to_csv(OUT / "combined_to_GEE_exact_id_date.csv", index=False, encoding="utf-8")
+ROW_LEVEL.mkdir(parents=True, exist_ok=True)
+nearest.to_csv(ROW_LEVEL / "pm25_source_to_nearest_daily_gee.csv", index=False, encoding="utf-8")
+bundle_pm.to_csv(ROW_LEVEL / "combined_to_PM25_exact_station_date_coordinate.csv", index=False, encoding="utf-8")
+bundle_gee.to_csv(ROW_LEVEL / "combined_to_GEE_exact_id_date.csv", index=False, encoding="utf-8")
 
 combined_nearest = bundle_pm[["pm25_row"]].merge(nearest, on="pm25_row", how="left", validate="one_to_one")
 summary = {

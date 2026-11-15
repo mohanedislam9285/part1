@@ -17,6 +17,8 @@ DATA_PROCESSED = PROJECT_ROOT / "data" / "processed"
 RESULTS_DIR = PROJECT_ROOT / "results"
 FIGURES_DIR = PROJECT_ROOT / "figures"
 
+SEED = 42
+
 
 def load_project_config(path: str | Path | None = None):
     """Load ``project.yaml``, validate it, and return ``(config, project_root)``."""
@@ -31,5 +33,6 @@ __all__ = [
     "DATA_PROCESSED",
     "RESULTS_DIR",
     "FIGURES_DIR",
+    "SEED",
     "load_project_config",
 ]

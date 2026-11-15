@@ -21,4 +21,6 @@ def test_eda_generates_actual_summary_and_figures(panel,config):
     root=Path(config["_config_dir"])/"results/TEST-00"
     assert pd.read_csv(root/"station_summary.csv").shape[0]==2
     assert (root/"correlations.csv").exists()
-    assert (root/"figures/pm25_over_time.png").exists()
+    assert (root/"monthly_trend.csv").exists()
+    assert not (root/"eda").exists()
+    assert not (root/"figures/pm25_over_time.png").exists()

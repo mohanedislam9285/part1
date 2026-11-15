@@ -1,6 +1,11 @@
 from sklearn.impute import SimpleImputer
+from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 import numpy as np
+
+def numeric_preprocessor():
+    """Median imputation and scaling for tabular features; fit on a training partition only."""
+    return Pipeline([("imputer",SimpleImputer(strategy="median",add_indicator=True)),("scaler",StandardScaler())])
 
 class SequencePreprocessor:
     """Fold-local imputation and scaling for (samples, time, features) arrays."""

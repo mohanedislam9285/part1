@@ -66,19 +66,12 @@ def run_eda(df: pd.DataFrame, cfg: dict, audit: dict | None = None) -> None:
     figdir=out/"figures"; figdir.mkdir(parents=True,exist_ok=True)
     exploratory_table(df,cfg,audit).to_csv(out/"Exploratory_Data.csv",index=False,encoding="utf-8")
     fig,ax=plt.subplots(figsize=(8,4)); df.pm25.hist(ax=ax,bins=40); ax.set(xlabel="PM2.5 (µg/m³)",ylabel="Days",title="Daily PM2.5 distribution"); fig.tight_layout(); fig.savefig(figdir/"pm25_distribution.png",dpi=160); plt.close(fig)
-    stations=df.station_id.dropna().unique(); fig,ax=plt.subplots(figsize=(10,4))
-    for station,g in df.groupby("station_id"):
-        if len(stations)<=12: ax.plot(g.timestamp,g.pm25,alpha=.45,lw=.7,label=str(station))
-    ax.set(xlabel="Date (UTC)",ylabel="PM2.5 (µg/m³)",title="Daily PM2.5 by station");
-    if len(stations)<=12: ax.legend(fontsize=7,ncol=3)
-    fig.tight_layout(); fig.savefig(figdir/"pm25_over_time.png",dpi=160); plt.close(fig)
     miss=df.isna().mean().sort_values(ascending=False); fig,ax=plt.subplots(figsize=(7,5)); miss.plot.bar(ax=ax); ax.set(ylabel="Fraction missing",title="Missingness after target cleaning"); fig.tight_layout(); fig.savefig(figdir/"missingness.png",dpi=160); plt.close(fig)
     value_cols=["pm25"]+[n for n in cfg["data"].get("predictors",{}) if n in df and n in df.select_dtypes(include="number")]
     for col in value_cols[1:]:
         fig,axes=plt.subplots(1,2,figsize=(9,3.5)); df[col].dropna().hist(ax=axes[0],bins=35); axes[0].set(xlabel=col,ylabel="Rows",title=f"{col} histogram"); axes[1].boxplot(df[col].dropna()); axes[1].set(ylabel=col,title=f"{col} boxplot"); fig.tight_layout(); fig.savefig(figdir/f"distribution_{col}.png",dpi=150); plt.close(fig)
     station_summary=df.groupby("station_id").pm25.agg(n_days="count",median="median",mean="mean",std="std").reset_index(); rate=df.assign(above25=df.pm25>25,above50=df.pm25>50).groupby("station_id")[["above25","above50"]].mean().mul(100).reset_index(); station_summary=station_summary.merge(rate,on="station_id").rename(columns={"above25":"pct_above_25","above50":"pct_above_50"}); station_summary.to_csv(out/"station_summary.csv",index=False)
     mdf=df.assign(month=df.timestamp.dt.month); monthly=mdf.groupby("month").pm25.agg(n_days="count",median="median",mean="mean",std="std").reset_index(); rates=mdf.assign(above25=mdf.pm25>25,above50=mdf.pm25>50).groupby("month")[["above25","above50"]].mean().mul(100).reset_index(); monthly=monthly.merge(rates,on="month").rename(columns={"above25":"pct_above_25","above50":"pct_above_50"}); monthly.to_csv(out/"monthly_summary.csv",index=False)
-    fig,ax=plt.subplots(figsize=(8,4)); monthly.set_index("month")[["median","mean"]].plot(marker="o",ax=ax); ax.set(xlabel="Month",ylabel="PM2.5 (µg/m³)",title="Monthly PM2.5 pattern"); fig.tight_layout(); fig.savefig(figdir/"pm25_by_month.png",dpi=150); plt.close(fig)
     seasonal=seasonal_table(df); seasonal.to_csv(out/"seasonal_summary.csv",index=False)
     fig,ax=plt.subplots(1,2,figsize=(10,3.7)); ax[0].bar(seasonal.season,seasonal["mean"],color="#4c72b0"); ax[0].set(xlabel="Season",ylabel="PM2.5 mean (µg/m³)",title="Seasonal PM2.5 level"); ax[1].bar(seasonal.season,seasonal.pct_days_above_25,color="#dd8452",label=">25 µg/m³"); ax[1].bar(seasonal.season,seasonal.pct_days_above_50,color="#c44e52",label=">50 µg/m³"); ax[1].set(xlabel="Season",ylabel="% of days",title="Seasonal exceedance frequency"); ax[1].legend(fontsize=8); fig.tight_layout(); fig.savefig(figdir/"pm25_by_season.png",dpi=150); plt.close(fig)
     nums=df[value_cols]; pearson=nums.corr(method="pearson"); spearman=nums.corr(method="spearman"); pairs=[]
@@ -87,27 +80,16 @@ def run_eda(df: pd.DataFrame, cfg: dict, audit: dict | None = None) -> None:
     pd.DataFrame(pairs,columns=["variable_a","variable_b","pearson_r","spearman_rho","high_correlation_abs_gt_0_9"]).to_csv(out/"correlations.csv",index=False)
     if len(value_cols)>1:
         fig,ax=plt.subplots(figsize=(max(7,len(value_cols)*.7),6)); im=ax.imshow(spearman,vmin=-1,vmax=1,cmap="coolwarm"); ax.set_xticks(range(len(value_cols)),value_cols,rotation=90); ax.set_yticks(range(len(value_cols)),value_cols); fig.colorbar(im,ax=ax,label="Spearman ρ"); fig.tight_layout(); fig.savefig(figdir/"spearman_correlations.png",dpi=160); plt.close(fig)
-    edadir=out/"eda"; edadir.mkdir(parents=True,exist_ok=True)
-    daily=(df.assign(day=df.timestamp.dt.floor("D"))
-             .groupby("day")
-             .agg(n_stations=("station_id","nunique"),n_obs=("pm25","size"),pm25_mean=("pm25","mean"),pm25_median=("pm25","median"))
-             .reset_index().rename(columns={"day":"timestamp"}))
-    daily.to_csv(edadir/"daily_coverage.csv",index=False,encoding="utf-8")
-    pd.DataFrame({"missing_n":df.isna().sum(),"missing_pct":df.isna().mean().mul(100)}).to_csv(edadir/"missingness.csv",encoding="utf-8")
     monthly_trend=(df.assign(month=df.timestamp.dt.strftime("%Y-%m"))
                      .groupby("month")
                      .agg(n_obs=("pm25","size"),n_stations=("station_id","nunique"),mean=("pm25","mean"),median=("pm25","median"),q25=("pm25",lambda s:float(s.quantile(.25))),q75=("pm25",lambda s:float(s.quantile(.75))))
                      .reset_index().rename(columns={"month":"timestamp"}))
-    monthly_trend.to_csv(edadir/"monthly_trend.csv",index=False,encoding="utf-8")
-    descriptive=df.pm25.describe(percentiles=[.01,.05,.25,.5,.75,.95,.99])
-    descriptive.loc["skewness"]=float(df.pm25.skew()); descriptive.loc["kurtosis"]=float(df.pm25.kurt())
-    descriptive.rename("pm25_ug_m3").to_frame().to_csv(edadir/"pm25_descriptive_statistics.csv",encoding="utf-8")
+    monthly_trend.to_csv(out/"monthly_trend.csv",index=False,encoding="utf-8")
     has_coordinates={"latitude","longitude"}.issubset(df.columns)
     aggregation={"pm25_mean":("pm25","mean"),"pm25_median":("pm25","median"),"n":("pm25","size")}
     if has_coordinates:
         aggregation={"latitude":("latitude","first"),"longitude":("longitude","first"),**aggregation}
     station_map=df.groupby("station_id").agg(**aggregation).reset_index()
-    station_map.to_csv(edadir/"station_summary.csv",index=False,encoding="utf-8")
     if has_coordinates and station_map[["latitude","longitude"]].notna().all().all():
         fig,ax=plt.subplots(figsize=(8,5)); points=ax.scatter(station_map.longitude,station_map.latitude,s=30,c=station_map.pm25_mean,cmap="viridis"); ax.set(xlabel="Longitude",ylabel="Latitude",title="Monitoring stations (colour = mean PM2.5)"); fig.colorbar(points,ax=ax,label="Mean PM2.5 (µg/m³)"); fig.tight_layout(); fig.savefig(figdir/"station_map.png",dpi=160); plt.close(fig)
     temporal_table(df).to_csv(out/"Exploratory_temporal.csv",index=False,encoding="utf-8")

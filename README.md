@@ -90,9 +90,6 @@ python -m pm25_project.cli sequence-coverage --config src/configs/project.yaml
 # Audit + EDA + the two template summary figures.
 python scripts/run_eda.py
 
-# Development-only value screening; requires audit and folds.
-python scripts/audit_cleaning_quality.py
-
 # Report evidence tables and figures; also requires the upstream audit below.
 python scripts/generate_part1_report_evidence.py
 
@@ -102,9 +99,16 @@ python scripts/audit_upstream_join.py
 
 Each script derives its paths from `src/configs/project.yaml` and stops with an actionable message when a prerequisite is missing.
 
-### Notebook
+### Notebooks
 
-[`notebooks/01_eda.ipynb`](notebooks/01_eda.ipynb) reproduces the exploratory tables and charts from the cleaned panel. It expects `audit` to have run first.
+- [`notebooks/01_eda.ipynb`](notebooks/01_eda.ipynb) reproduces the exploratory tables and charts from the cleaned panel.
+- [`notebooks/02_timeseries.ipynb`](notebooks/02_timeseries.ipynb) reports per-station coverage, ACF/PACF, ADF/KPSS/Ljung–Box tests and trend slopes on uninterrupted development segments. Its outputs are saved in the file.
+
+Both notebooks expect `audit` to have run first, and `02_timeseries.ipynb` also expects `folds` to have written `results/future_holdout.json`. Re-execute headless with:
+
+```powershell
+jupyter-execute --inplace notebooks/02_timeseries.ipynb
+```
 
 ## Cleaning and validation rules
 
@@ -136,24 +140,25 @@ Fold sizes, date boundaries and embargo days are recorded in each JSON file. The
 | [`results/Exploratory_temporal.csv`](results/Exploratory_temporal.csv) | Per-station cadence, ACF/PACF, stationarity and trend diagnostics |
 | [`results/station_identity_reconciliation.csv`](results/station_identity_reconciliation.csv) | Sensor name and coordinate mapping for each composite station |
 | [`results/station_identity_reconciliation_summary.json`](results/station_identity_reconciliation_summary.json) | Reconciliation counts |
-| [`results/eda/`](results/eda/) | Daily coverage, missingness, monthly trend, descriptive statistics and station summary |
+| [`results/monthly_trend.csv`](results/monthly_trend.csv) | Monthly observation counts, station counts and PM2.5 quantiles |
 | [`results/correlations.csv`](results/correlations.csv) | Pairwise Pearson and Spearman correlations |
 | [`results/station_summary.csv`](results/station_summary.csv) | Station-level PM2.5 and exceedance summary |
 | [`results/monthly_summary.csv`](results/monthly_summary.csv) | Monthly PM2.5 summary |
 | [`results/seasonal_summary.csv`](results/seasonal_summary.csv) | Seasonal levels and exceedance frequencies |
-| [`results/cleaning_quality_audit/`](results/cleaning_quality_audit/) | Development-only value screening |
+| [`results/cleaning_quality_audit/cleaning_quality_audit.json`](results/cleaning_quality_audit/cleaning_quality_audit.json) | Cleaning-quality summary; row-level flag tables stay local |
 | [`results/provenance_audit/`](results/provenance_audit/) | Upstream join summary |
 | [`results/pollutant_missingness_station_month_development.csv`](results/pollutant_missingness_station_month_development.csv) | NO2/CO/O3 missingness by station-month |
 | [`results/part1_evidence_summary.json`](results/part1_evidence_summary.json) | Saved summary of the evidence above |
 | [`figures/`](figures/) | Distribution, seasonal, missingness, coverage and summary charts |
 
-The `folds/` directory, `results/future_holdout.json` and `results/lookback_coverage.csv` are generated when the corresponding command runs.
+The fold definitions in `folds/` and the reservation record `results/future_holdout.json` are committed with the repository. `results/lookback_coverage.csv` is generated when `sequence-coverage` runs.
 
 ## Reports and presentation
 
 - [`reports/part_1/Part_1_Report.pdf`](reports/part_1/Part_1_Report.pdf) — Part 1 report.
 - [`reports/part_1/source/part_1_report.typ`](reports/part_1/source/part_1_report.typ) — Typst source.
 - [`presentation/Part_1_Presentation.pptx`](presentation/Part_1_Presentation.pptx) — Part 1 slides.
+- [`presentation/Part_1_Presentation.pdf`](presentation/Part_1_Presentation.pdf) — PDF export of the slides.
 
 Build the PDF from the repository root with:
 
@@ -181,9 +186,13 @@ The suite covers cleaning rules, data contracts, EDA artifacts, sequence boundar
 │   ├── raw/                           source CSVs (not shipped)
 │   └── processed/                     cleaned panel and audit (generated)
 ├── notebooks/
-│   └── 01_eda.ipynb                   exploratory notebook
+│   ├── 01_eda.ipynb                   exploratory notebook
+│   └── 02_timeseries.ipynb            coverage, ACF/PACF and stationarity notebook
 ├── src/
-│   ├── config.py                      notebook path and config helpers
+│   ├── config.py                      paths, seed and config helpers for notebooks
+│   ├── features.py                    re-export of build_origin_features
+│   ├── preprocessing.py               re-export of cleaning and fold-local scaling
+│   ├── splits.py                      re-export of the fold constructors
 │   ├── configs/
 │   │   └── project.yaml               data, cleaning, feature and path settings
 │   ├── pm25_project/
@@ -201,13 +210,13 @@ The suite covers cleaning rules, data contracts, EDA artifacts, sequence boundar
 │   └── tests/                         automated checks
 ├── scripts/
 │   ├── run_eda.py                     audit + EDA + summary figures
-│   ├── audit_cleaning_quality.py      development-only value screening
 │   ├── audit_upstream_join.py         upstream join reconstruction
 │   └── generate_part1_report_evidence.py
+├── folds/                             committed temporal, spatial and diagnostic fold JSONs
 ├── results/                           saved tables and audit outputs
 ├── figures/                           saved charts
 ├── reports/part_1/                    Part 1 report and Typst source
-└── presentation/                      Part 1 slides
+└── presentation/                      Part 1 slides (PPTX and PDF)
 ```
 
 ## Limitations
