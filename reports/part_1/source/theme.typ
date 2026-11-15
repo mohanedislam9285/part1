@@ -30,6 +30,7 @@
 // ---- callout ----------------------------------------------------------------
 #let callout(title, body, accent: teal, tint: pale) = block(
   width: 100%,
+  breakable: false,
   fill: tint,
   stroke: (left: 3pt + accent),
   inset: (x: 11pt, y: 9pt),

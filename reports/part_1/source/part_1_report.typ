@@ -108,7 +108,7 @@
   [Redistribution rights for the compiled Kaggle bundle are *unresolved*, and the publisher's full
    upstream row-inclusion rule cannot be reconstructed. Meteorology, trace gases and AOD are retained
    in the audit but *excluded from the input contract* because their availability at the origin
-   is not documented. Both points are treated as first-class limitations, not footnotes.],
+   is not documented.],
   accent: amber,
   tint: sand,
 )
@@ -142,12 +142,10 @@
 = Objective and scope
 #block[
 The data describe daily PM2.5 concentration at monitoring stations. The target is a continuous
-concentration in µg/m³, defined for the day after a seven-day daily history. This report covers data
-auditing, cleaning and fold preparation only: it builds and validates the input contract and
-reports no predictive results.
+concentration in µg/m³, defined for the day after a seven-day daily history.
 ]
 
-#heading(level: 2)[What Part 1 must deliver]
+#heading(level: 2)[Deliverables]
 #ticks(
   [A verified dataset description: source, licence status, variable units, dimensions and coverage.],
   [A documented cleaning policy: exactly which records were removed, on what rule, and what was deliberately *kept* despite being unusual.],
@@ -161,17 +159,12 @@ reports no predictive results.
 #keep[
 #tbl(
   (0.55fr, 4.45fr),
-  table.header(th("RQ"), th("Question owned or informed by Part 1")),
+  table.header(th("RQ"), th("Question this part addresses")),
   [RQ1], [Is the cleaned panel complete and consistent enough for matched-fold comparison?],
   [RQ3], [Which *available* feature groups carry signal, and which are excluded because they are unavailable at the origin?],
   [RQ4], [How do seasonality, sparse coverage, extreme events, missingness and data rights constrain trustworthy use?],
 )
 ]
-
-#callout(
-  "Scope decision",
-  [This report covers data auditing, cleaning, exploratory analysis and fold preparation only.],
-)
 
 #v(2pt)
 
@@ -293,7 +286,7 @@ cannot establish an instrument fault.
 #v(5pt)
 #caption([Cleaning flow. Physically valid values — including plausible extremes — pass through; only out-of-rule targets are removed.])
 #v(4pt)
-Retaining plausible extremes is deliberate. A high concentration is not automatically a measurement
+Plausible extremes are retained. A high concentration is not automatically a measurement
 error, and deleting unusual values would bias the target toward ordinary days and remove the episodes
 the analysis must retain. The station-relative Tukey screen identified 352 potentially unusual
 values across 71 stations. These observations were retained and flagged for review rather than
@@ -347,8 +340,7 @@ coordinate-defined stations each, which is why the station count is not the sens
 = Target distribution
 #block[
 The cleaned PM2.5 target is strongly right-skewed: a long, low body of ordinary days and a thin
-tail of pollution episodes. This distribution shapes the descriptive choices made here,
-particularly the treatment of rare high-concentration events.
+tail of pollution episodes.
 ]
 
 #align(center)[#image("../../../figures/pm25_distribution.png", width: 76%)]
@@ -452,11 +444,11 @@ diagnostics are therefore restricted to uninterrupted daily segments.
   table.header(th("Property"), th("Value"), th("Consequence")),
   [ACF/PACF availability], [63 stations], [≥ 14 consecutive development days.],
   [Formal ADF / KPSS / Ljung-Box], [6 stations], [Only ≥ 30-day runs are testable.],
-  [Lead–lag pollutant analysis], [2–6 stations per lag], [Descriptive only; no causal claim.],
+  [Lead–lag pollutant analysis], [2–6 stations per lag], [Descriptive.],
 )
 ]
 #v(4pt)
-#caption([Development partition only. Sequence construction never bridges a date gap, so irregular coverage is handled by construction.])
+#caption([Development partition; gaps break runs.])
 #v(4pt)
 Across the development partition, the median longest uninterrupted run is *17 days* and the maximum
 is *32 days*; 63 stations reach at least 14 consecutive days and only 6 reach 30. Applying conventional
@@ -506,8 +498,7 @@ correlations do not establish that a variable is usable at the origin.
 #v(4pt)
 Missingness is concentrated rather than uniform. For each gas, 19 of the 73 development stations have
 at least one affected station-month; 258 of 2,179 NO₂ station-months, 258 of 2,179 CO station-months,
-and 261 of 2,179 O₃ station-months contain at least one missing day. Missingness is therefore
-concentrated in a minority of stations and months rather than spread evenly across the dataset.
+and 261 of 2,179 O₃ station-months contain at least one missing day.
 
 #heading(level: 2)[Missing-value profile]
 #keep[
@@ -691,15 +682,6 @@ rows for that station, ending at $t$, paired with the single target value at $t+
   tint: ice,
 )
 #v(4pt)
-#callout(
-  "Verification boundary",
-  [These tests assess the implemented preprocessing pipeline only. They cannot establish whether the
-   publisher's original upstream join was leakage-free or reconstruct its complete row-selection
-   procedure.],
-  accent: amber,
-  tint: sand,
-)
-
 #v(2pt)
 
 // ----------------------------------------------- 10. limitations/handoff --
@@ -819,7 +801,7 @@ kept outside the input contract.
 )
 ]
 #v(4pt)
-#caption([Configuration from `src/configs/project.yaml`; source columns from the cleaning audit. Column names follow the CSV; chemical symbols are used in prose. The input contract admits only target history and calendar columns; the other audited columns remain outside it.])
+#caption([Configuration from `src/configs/project.yaml`; source columns from the cleaning audit. Column names follow the CSV; chemical symbols are used in prose.])
 
 #v(2pt)
 

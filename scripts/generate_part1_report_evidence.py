@@ -8,8 +8,7 @@ Outputs:
 
 Every value is computed from data/processed/cleaned_daily.csv, the saved
 development partition (results/future_holdout.json), the pollutant
-station-month missingness table, and the upstream join audit. No value is
-typed in by hand.
+station-month missingness table, and the upstream join audit.
 """
 from __future__ import annotations
 

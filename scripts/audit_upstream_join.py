@@ -1,7 +1,7 @@
 """Measure row-level correspondence between the supplied raw CSVs and bundle.
 
 The audit reports observed matches and the join recipe stated in the Kaggle
-description. It does not claim access to the author's original ETL code.
+description.
 """
 from __future__ import annotations
 
@@ -152,7 +152,7 @@ summary = {
     "interpretation": (
         "All combined rows correspond to one PM2.5 source record by station name, date and coordinates, "
         "and to one GEE row by id/date. The matched PM/GEE coordinates coincide. This reproduces the "
-        "observed bundle correspondences, but does not prove the author's original code or explain all "
+        "observed bundle correspondences; it does not explain all "
         "PM observations within the stated distance threshold that were omitted from the bundle."
     ),
 }

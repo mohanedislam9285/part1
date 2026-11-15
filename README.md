@@ -9,13 +9,11 @@ This repository contains the data-preparation stage of a PM2.5 study:
 - write temporal, station-grouped and diagnostic fold definitions;
 - check seven-day sequence availability against the temporal folds.
 
-The repository stops at validated, leakage-aware inputs. It produces no predictions and reports no performance scores.
-
 > **Data licensing:** the compiled Kaggle bundle is labelled *Other (specified in description)*, and its redistribution terms are not explicit. Use it for local academic analysis only until source-by-source attribution and redistribution rights are confirmed. See [`data/manifest.yaml`](data/manifest.yaml).
 
 ## What the saved evidence shows
 
-These figures come from the saved artifacts under [`results/`](results/) and must be reproduced from the source file before being cited as new results.
+Recorded values from the saved artifacts under [`results/`](results/).
 
 | Item | Recorded value |
 |---|---|
@@ -222,6 +220,5 @@ The suite covers cleaning rules, data contracts, EDA artifacts, sequence boundar
 ## Limitations
 
 1. **Licensing and provenance.** The bundle is compiled from OpenAQ, Copernicus and NASA sources. Its redistribution terms are not explicit, and the project does not include a complete transformation log from the original providers to the compiled CSV. Do not redistribute the data without confirming source-by-source rights.
-2. **Saved artifacts are evidence, not a fresh run.** The tables under `results/` were produced from the source file described above. Re-running the commands overwrites them; cite only values you have reproduced or can trace to the saved files.
-3. **No predictive results.** This repository covers data preparation and fold validation only. It reports no forecast skill and contains no prediction artifact.
-4. **Coverage is uneven.** Many stations have short or interrupted daily histories; the development partition has only six stations with an uninterrupted run of at least 30 days. Any use of the folds must account for this.
+2. **Saved artifacts.** The tables under `results/` were produced from the source file described above. Re-running the commands overwrites them.
+3. **Coverage is uneven.** Many stations have short or interrupted daily histories; the development partition has only six stations with an uninterrupted run of at least 30 days. Any use of the folds must account for this.
