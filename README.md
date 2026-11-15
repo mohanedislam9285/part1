@@ -172,17 +172,8 @@ The specification asks for per-group folders (`results/BXX-YY/`) consolidated in
 ## Reports and presentation
 
 - [`reports/part_1/Part_1_Report.pdf`](reports/part_1/Part_1_Report.pdf) — Part 1 report.
-- [`reports/part_1/source/part_1_report.typ`](reports/part_1/source/part_1_report.typ) — Typst source.
 - [`presentation/Part_1_Presentation.pptx`](presentation/Part_1_Presentation.pptx) — Part 1 slides.
 - [`presentation/Part_1_Presentation.pdf`](presentation/Part_1_Presentation.pdf) — PDF export of the slides.
-
-Build the PDF from the repository root with:
-
-```powershell
-typst compile --root . reports/part_1/source/part_1_report.typ reports/part_1/Part_1_Report.pdf
-```
-
-Typst is not a Python dependency.
 
 ## Tests
 
@@ -234,7 +225,7 @@ The suite covers cleaning rules, data contracts, EDA artifacts, lead–lag scree
 ├── folds/                             committed temporal, spatial and diagnostic fold JSONs
 ├── results/                           saved tables and audit outputs
 ├── figures/                           saved charts
-├── reports/part_1/                    Part 1 report and Typst source
+├── reports/part_1/                    Part 1 report (PDF)
 └── presentation/                      Part 1 slides (PPTX and PDF)
 ```
 
